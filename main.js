@@ -335,7 +335,7 @@ class Omada extends utils.Adapter {
           if (error.response) {
             if (error.response.status === 401) {
               error.response && this.log.debug(JSON.stringify(error.response.data));
-              this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
+              this.log.info(" receive 401 error. Refresh Token in 60 seconds");
               this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
               this.refreshTokenTimeout = setTimeout(() => {
                 this.refreshToken();
@@ -344,7 +344,6 @@ class Omada extends utils.Adapter {
               return;
             }
           }
-          this.log.error(element.url);
           this.log.error(error);
           error.response && this.log.error(JSON.stringify(error.response.data));
         });
@@ -384,7 +383,7 @@ class Omada extends utils.Adapter {
       if (!state.ack) {
         const idArray = id.split(".");
         const siteId = idArray[2];
-        const folder = idArray[3];
+        // const folder = idArray[3];
         const ssidId = idArray[4];
         const command = idArray[5];
 
@@ -416,7 +415,7 @@ class Omada extends utils.Adapter {
             if (error.response) {
               if (error.response.status === 401) {
                 error.response && this.log.debug(JSON.stringify(error.response.data));
-                this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
+                this.log.info(" receive 401 error. Refresh Token in 60 seconds");
                 this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
                 this.refreshTokenTimeout = setTimeout(() => {
                   this.refreshToken();
@@ -432,7 +431,6 @@ class Omada extends utils.Adapter {
         this.refreshTimeout = setTimeout(() => {
           this.updateSsidSettings();
         }, 5000);
-      } else {
       }
     }
   }
