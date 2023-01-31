@@ -9,6 +9,7 @@
 const utils = require("@iobroker/adapter-core");
 const axios = require("axios").default;
 const Json2iob = require("json2iob");
+const https = require("https");
 
 class Omada extends utils.Adapter {
   /**
@@ -28,7 +29,11 @@ class Omada extends utils.Adapter {
     this.refreshTokenTimeout = null;
     this.session = {};
     this.json2iob = new Json2iob(this);
-    this.requestClient = axios.create();
+    this.requestClient = axios.create({
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+    });
     this.omadacId = "";
   }
 
