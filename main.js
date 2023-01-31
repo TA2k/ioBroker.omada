@@ -25,6 +25,8 @@ class Omada extends utils.Adapter {
     this.on("stateChange", this.onStateChange.bind(this));
     this.on("unload", this.onUnload.bind(this));
     this.deviceArray = [];
+    this.wlans = [];
+    this.ssids = {};
     this.updateInterval = null;
     this.reLoginTimeout = null;
     this.refreshTokenTimeout = null;
@@ -129,6 +131,7 @@ class Omada extends utils.Adapter {
         if (res.data.result && res.data.result.data) {
           this.log.info(`Found ${res.data.result.data.length} sites`);
           for (const device of res.data.result.data) {
+            delete device.deviceAccount;
             this.log.debug(JSON.stringify(device));
             const id = device.id;
 
@@ -176,21 +179,60 @@ class Omada extends utils.Adapter {
   }
 
   async updateDevices() {
+    // let dateMinus7Days = new Date();
+    // dateMinus7Days.setDate(dateMinus7Days.getDate() - 7);
+    // dateMinus7Days = Math.round(dateMinus7Days.getTime() / 1000);
+    // const currentDate = Math.round(Date.now() / 1000);
     const statusArray = [
       {
-        url: "https://smartapi.vesync.com/cloud/v2/deviceManaged/bypassV2",
-        path: "status",
-        desc: "Status of the device",
+        url: "sites/$id/clients?currentPageSize=500&currentPage=1",
+        path: "clients",
+        desc: "List of clients",
+        preferedArrayName: "mac",
+        preferedArrayDesc: "name",
+      },
+      {
+        url: "sites/$id/setting/wlans",
+        path: "wlans",
+        desc: "List of wlans",
+        preferedArrayName: "id",
+        preferedArrayDesc: "name",
+      },
+      {
+        url: "sites/$id/dashboard/overviewDiagram",
+        path: "dashboardOverviewDiagram",
+        desc: "Dashboard Overview Diagram",
+      },
+      {
+        url: "sites/$id/grid/devices?currentPage=1&currentPageSize=500",
+        path: "devices",
+        desc: "Devices",
+        preferedArrayName: "mac",
+        preferedArrayDesc: "name",
+      },
+
+      {
+        url: "sites/$id/insight/clients?currentPage=1&currentPageSize=500",
+        path: "insight",
+        desc: "Insight Clients",
+        preferedArrayName: "mac",
+        preferedArrayDesc: "name",
+      },
+      {
+        url: "sites/$id/site/alerts?currentPage=1&currentPageSize=100",
+        path: "alerts",
+        desc: "Alerts",
+        forceIndex: true,
       },
     ];
 
     for (const element of statusArray) {
       for (const device of this.deviceArray) {
-        // const url = element.url.replace("$id", id);
+        const url = element.url.replace("$id", device.id);
 
         await this.requestClient({
           method: "get",
-          url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${element.url}`,
+          url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
           headers: {
             Accept: "application/json, text/plain, */*",
             "Csrf-Token": this.session.token,
@@ -210,26 +252,28 @@ class Omada extends utils.Adapter {
               data = data.result;
             }
 
-            const forceIndex = true;
-            const preferedArrayName = null;
-
+            if (element.path === "wlans" && data.data) {
+              this.wlans = data.data;
+              this.updateSsidSettings();
+            }
             this.json2iob.parse(device.id + "." + element.path, data, {
-              forceIndex: forceIndex,
-              preferedArrayName: preferedArrayName,
+              forceIndex: element.forceIndex,
+              preferedArrayName: element.preferedArrayName,
+              preferedArrayDesc: element.preferedArrayDesc,
               channelName: element.desc,
             });
-            await this.setObjectNotExistsAsync(element.path + ".json", {
-              type: "state",
-              common: {
-                name: "Raw JSON",
-                write: false,
-                read: true,
-                type: "string",
-                role: "json",
-              },
-              native: {},
-            });
-            this.setState(element.path + ".json", JSON.stringify(data), true);
+            // await this.setObjectNotExistsAsync(element.path + ".json", {
+            //   type: "state",
+            //   common: {
+            //     name: "Raw JSON",
+            //     write: false,
+            //     read: true,
+            //     type: "string",
+            //     role: "json",
+            //   },
+            //   native: {},
+            // });
+            // this.setState(element.path + ".json", JSON.stringify(data), true);
           })
           .catch((error) => {
             if (error.response) {
@@ -249,6 +293,61 @@ class Omada extends utils.Adapter {
             error.response && this.log.error(JSON.stringify(error.response.data));
           });
       }
+    }
+  }
+
+  async updateSsidSettings() {
+    for (const wlan of this.wlans) {
+      const url = "sites/" + wlan.site + "/setting/wlans/" + wlan.id + "/ssids?currentPage=1&currentPageSize=500";
+      await this.requestClient({
+        method: "get",
+        url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Csrf-Token": this.session.token,
+        },
+      })
+        .then(async (res) => {
+          this.log.debug(JSON.stringify(res.data));
+          if (!res.data.result) {
+            return;
+          }
+          if (res.data.errorCode != 0) {
+            this.log.error(JSON.stringify(res.data));
+            return;
+          }
+          let data = res.data.result;
+          if (data.result) {
+            data = data.result;
+          }
+
+          this.ssids[wlan.site] = data.data;
+
+          this.json2iob.parse(wlan.site + ".ssids", data, {
+            forceIndex: null,
+            write: true,
+            preferedArrayName: "id",
+            preferedArrayDesc: "name",
+            channelName: "List of SSIDs",
+          });
+        })
+        .catch((error) => {
+          if (error.response) {
+            if (error.response.status === 401) {
+              error.response && this.log.debug(JSON.stringify(error.response.data));
+              this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
+              this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
+              this.refreshTokenTimeout = setTimeout(() => {
+                this.refreshToken();
+              }, 1000 * 60);
+
+              return;
+            }
+          }
+          this.log.error(element.url);
+          this.log.error(error);
+          error.response && this.log.error(JSON.stringify(error.response.data));
+        });
     }
   }
   async refreshToken() {
@@ -283,34 +382,57 @@ class Omada extends utils.Adapter {
   async onStateChange(id, state) {
     if (state) {
       if (!state.ack) {
-        const deviceId = id.split(".")[2];
-        const folder = id.split(".")[3];
-        const command = id.split(".")[4];
+        const idArray = id.split(".");
+        const siteId = idArray[2];
+        const folder = idArray[3];
+        const ssidId = idArray[4];
+        const command = idArray[5];
+
+        const ssidStatus = this.ssids[siteId].find((ssid) => ssid.id == ssidId);
+        if (!ssidStatus) {
+          this.log.error("SSID not found");
+          return;
+        }
+        ssidStatus[command] = state.val;
+        this.log.debug(JSON.stringify(ssidStatus));
+        await this.requestClient({
+          method: "patch",
+          url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/sites/${siteId}/setting/wlans/${ssidStatus.wlanId}/ssids/${ssidId}`,
+          headers: {
+            "Content-Type": " application/json;charset=UTF-8",
+            Accept: "application/json, text/plain, */*",
+            "Csrf-Token": this.session.token,
+          },
+          data: ssidStatus,
+        })
+          .then(async (res) => {
+            if (res.data.errorCode != 0) {
+              this.log.error(JSON.stringify(res.data));
+              return;
+            }
+            this.log.info(JSON.stringify(res.data));
+          })
+          .catch((error) => {
+            if (error.response) {
+              if (error.response.status === 401) {
+                error.response && this.log.debug(JSON.stringify(error.response.data));
+                this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
+                this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
+                this.refreshTokenTimeout = setTimeout(() => {
+                  this.refreshToken();
+                }, 1000 * 60);
+
+                return;
+              }
+            }
+            this.log.error(error);
+            error.response && this.log.error(JSON.stringify(error.response.data));
+          });
 
         this.refreshTimeout = setTimeout(() => {
-          this.updateDevices();
+          this.updateSsidSettings();
         }, 5000);
       } else {
-        // const idArray = id.split(".");
-        // const command = id.split(".")[3];
-        // const stateName = idArray[idArray.length - 1];
-        // const deviceId = id.split(".")[2];
-        // if (command === "remote") {
-        //   return;
-        // }
-        // const resultDict = {
-        //   onOff: "turn",
-        //   turn: "turn",
-        //   brightness: "brightness",
-        //   r: "r",
-        //   g: "g",
-        //   b: "b",
-        //   colorTemInKelvin: "colorwc",
-        // };
-        // if (resultDict[stateName]) {
-        //   const value = state.val;
-        //   await this.setStateAsync(deviceId + ".remote." + resultDict[stateName], value, true);
-        // }
       }
     }
   }
