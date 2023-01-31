@@ -81,6 +81,7 @@
     "username": "",
     "password": "",
     "ip": "",
+    "interval": 30,
     "port": "8043"
   },
   "objects": [],

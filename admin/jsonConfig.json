@@ -75,6 +75,25 @@
         "uk": "Логін",
         "zh-cn": "护照"
       }
+    },
+    "interval": {
+      "type": "number",
+      "newLine": true,
+      "min": 1,
+      "sm": 2,
+      "label": {
+        "en": "Update interval (in seconds)",
+        "de": "Updateintervall (in Sekunden)",
+        "ru": "Интервал обновления (в секундах)",
+        "pt": "Intervalo de atualização (em segundos)",
+        "nl": "Update interval (in seconden)",
+        "fr": "Intervalle de mise à jour (en secondes)",
+        "it": "Intervallo di aggiornamento (in secondi)",
+        "es": "Intervalo de actualización (en segundos)",
+        "pl": "Update interval (ang.)",
+        "uk": "Період оновлення (в секундах)",
+        "zh-cn": "最新间隔(第二期)"
+      }
     }
   }
 }

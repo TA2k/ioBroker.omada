@@ -48,10 +48,10 @@ class Omada extends utils.Adapter {
   async onReady() {
     // Reset the connection indicator during startup
     this.setState("info.connection", false, true);
-    // if (this.config.interval < 0.5) {
-    //   this.log.info("Set interval to minimum 0.5");
-    //   this.config.interval = 0.5;
-    // }
+    if (this.config.interval < 0.5) {
+      this.log.info("Set interval to minimum 0.5");
+      this.config.interval = 0.5;
+    }
     if (!this.config.ip || !this.config.username || !this.config.password) {
       this.log.error("Please set username and password in the instance settings");
       return;
@@ -66,7 +66,7 @@ class Omada extends utils.Adapter {
       await this.updateDevices();
       this.updateInterval = setInterval(async () => {
         await this.updateDevices();
-      }, 5 * 60 * 1000);
+      }, this.config.interval * 1000);
     }
     this.refreshTokenInterval = setInterval(() => {
       this.refreshToken();
