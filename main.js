@@ -190,6 +190,7 @@ class Omada extends utils.Adapter {
         desc: "List of clients",
         preferedArrayName: "mac",
         preferedArrayDesc: "name",
+        deleteBeforeUpdate: true,
       },
       {
         url: "sites/$id/setting/wlans",
@@ -217,6 +218,7 @@ class Omada extends utils.Adapter {
         desc: "Insight Clients",
         preferedArrayName: "mac",
         preferedArrayDesc: "name",
+        deleteBeforeUpdate: true,
       },
       {
         url: "sites/$id/site/alerts?currentPage=1&currentPageSize=100",
@@ -261,6 +263,7 @@ class Omada extends utils.Adapter {
               preferedArrayName: element.preferedArrayName,
               preferedArrayDesc: element.preferedArrayDesc,
               channelName: element.desc,
+              deleteBeforeUpdate: element.deleteBeforeUpdate,
             });
             // await this.setObjectNotExistsAsync(element.path + ".json", {
             //   type: "state",
