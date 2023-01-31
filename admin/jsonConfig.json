@@ -1,0 +1,80 @@
+{
+  "i18n": true,
+  "type": "panel",
+  "items": {
+    "ip": {
+      "type": "ip",
+      "label": {
+        "en": "Omada IP",
+        "de": "Omada IP",
+        "ru": "Омада IP",
+        "pt": "Omada IP",
+        "nl": "Omada IP",
+        "fr": "Omada IP",
+        "it": "Omada IP",
+        "es": "Omada IP",
+        "pl": "Omada IP",
+        "uk": "Омада IP",
+        "zh-cn": "OmadaIP"
+      },
+      "newLine": true,
+      "sm": 3
+    },
+    "port": {
+      "type": "text",
+      "label": {
+        "en": "Omada Port",
+        "de": "Omada Port",
+        "ru": "Омада Port",
+        "pt": "Omada Port",
+        "nl": "Omada Port",
+        "fr": "Omada Port",
+        "it": "Omada Port",
+        "es": "Omada Port",
+        "pl": "Omada Port",
+        "uk": "Омада Port",
+        "zh-cn": "OmadaPort"
+      },
+      "newLine": true,
+      "sm": 3
+    },
+    "username": {
+      "type": "text",
+      "label": {
+        "en": "Username",
+        "de": "Benutzername",
+        "ru": "Имя пользователя",
+        "pt": "Nome de utilizador",
+        "nl": "Noem",
+        "fr": "Nom",
+        "it": "Nome utente",
+        "es": "Nombre de usuario",
+        "pl": "Username",
+        "uk": "Ім'я користувача",
+        "zh-cn": "用户名称"
+      },
+      "newLine": true,
+      "sm": 3
+    },
+    "password": {
+      "type": "password",
+      "newLine": true,
+      "repeat": false,
+      "visible": true,
+      "sm": 3,
+      "label": {
+        "en": "Password",
+        "de": "Passwort",
+        "ru": "Пароль",
+        "pt": "Senha",
+        "nl": "Wachtwoord",
+        "fr": "Mot de passe",
+        "it": "Password",
+        "es": "Contraseña",
+        "pl": "Password",
+        "uk": "Логін",
+        "zh-cn": "护照"
+      }
+    }
+  }
+}

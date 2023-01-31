@@ -1,0 +1,110 @@
+{
+  "common": {
+    "name": "omada",
+    "version": "0.0.1",
+    "news": {
+      "0.0.1": {
+        "en": "initial release",
+        "de": "Erstveröffentlichung",
+        "ru": "Начальная версия",
+        "pt": "lançamento inicial",
+        "nl": "Eerste uitgave",
+        "fr": "Première version",
+        "it": "Versione iniziale",
+        "es": "Versión inicial",
+        "pl": "Pierwsze wydanie",
+        "zh-cn": "首次出版"
+      }
+    },
+    "title": "TP-Link Omada",
+    "titleLang": {
+      "en": "TP-Link Omada",
+      "de": "TP-Link Omada",
+      "ru": "TP-Link Омада",
+      "pt": "TP-Link Omada",
+      "nl": "TP Link Omada",
+      "fr": "TP-Link Omada",
+      "it": "TP-Link Omada",
+      "es": "TP-Link Omada",
+      "pl": "TP-Link Omada",
+      "zh-cn": "TP-Link 奥马达"
+    },
+    "desc": {
+      "en": "Adapter for TP-Link Omada",
+      "de": "Adapter für TP-Link Omada",
+      "ru": "Адаптер для TP-Link Omada",
+      "pt": "Adaptador para TP-Link Omada",
+      "nl": "Adapter voor TP-Link Omada",
+      "fr": "Adaptateur pour TP-Link Omada",
+      "it": "Adattatore per TP-Link Omada",
+      "es": "Adaptador para TP-Link Omada",
+      "pl": "Adapter do TP-Link Omada",
+      "zh-cn": "适用于 TP-Link Omada 的适配器"
+    },
+    "authors": ["TA2k <tombox2020@gmail.com>"],
+    "keywords": ["omada", "tp-link"],
+    "license": "MIT",
+    "platform": "Javascript/Node.js",
+    "main": "main.js",
+    "icon": "omada.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/TA2k/ioBroker.omada/main/admin/omada.png",
+    "readme": "https://github.com/TA2k/ioBroker.omada/blob/main/README.md",
+    "loglevel": "info",
+    "mode": "daemon",
+    "type": "infrastructure",
+    "compact": true,
+    "connectionType": "local",
+    "dataSource": "poll",
+    "plugins": {
+      "sentry": {
+        "dsn": "https://802f699c7aa84a62b0bcb54b31485352@sentry.iobroker.net/226"
+      }
+    },
+    "adminUI": {
+      "config": "json"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=3.3.22"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=5.2.28"
+      }
+    ]
+  },
+  "encryptedNative": ["password"],
+  "protectedNative": ["password"],
+  "native": {
+    "username": "",
+    "password": "",
+    "ip": "",
+    "port": "8043"
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "Device or service connected",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ]
+}
