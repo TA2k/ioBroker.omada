@@ -23,17 +23,17 @@
     "port": {
       "type": "text",
       "label": {
-        "en": "Omada Port",
-        "de": "Omada Port",
-        "ru": "Омада Port",
-        "pt": "Omada Port",
-        "nl": "Omada Port",
-        "fr": "Omada Port",
-        "it": "Omada Port",
-        "es": "Omada Port",
-        "pl": "Omada Port",
-        "uk": "Омада Port",
-        "zh-cn": "OmadaPort"
+        "en": "Omada Port (Hardware Controller default Port = 443)",
+        "de": "Omada Port (Hardware Controller default Port = 443)",
+        "ru": "Порт Омада (Hardware Controller default Port = 443)",
+        "pt": "Porta Omada (Porta padrão de Hardware Controller = 443)",
+        "nl": "Omada Port (Hardware Controller default Port = 443)",
+        "fr": "Port Omada (port par défaut du logiciel Port = 443)",
+        "it": "Porto di Omada (Porto predefinito di Hardware Controller = 443)",
+        "es": "Puerto de Omada (porto por defecto de Hardware Controller = 443)",
+        "pl": "Port Omada (ang.)",
+        "uk": "Omada Порт (Hardware Controller за замовчуванням Порт = 443)",
+        "zh-cn": "Omada Port(Hadware违约港口=443)"
       },
       "newLine": true,
       "sm": 3
