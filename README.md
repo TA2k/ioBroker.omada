@@ -18,6 +18,7 @@ Adapter for TP-Link Omada
 # Loginablauf
 
 Die Omada IP, Login und Passwort eingeben.
+Default Port für Hardware Controller ist 443
 
 # Steuerung
 
