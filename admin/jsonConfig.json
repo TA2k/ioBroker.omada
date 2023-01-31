@@ -3,7 +3,7 @@
   "type": "panel",
   "items": {
     "ip": {
-      "type": "ip",
+      "type": "text",
       "label": {
         "en": "Omada IP",
         "de": "Omada IP",
