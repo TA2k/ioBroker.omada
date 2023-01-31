@@ -9,7 +9,8 @@
 const utils = require("@iobroker/adapter-core");
 const axios = require("axios").default;
 const Json2iob = require("json2iob");
-const https = require("https");
+const { CookieJar } = require("tough-cookie");
+const { HttpsCookieAgent } = require("http-cookie-agent/http");
 
 class Omada extends utils.Adapter {
   /**
@@ -29,9 +30,11 @@ class Omada extends utils.Adapter {
     this.refreshTokenTimeout = null;
     this.session = {};
     this.json2iob = new Json2iob(this);
+    const jar = new CookieJar();
     this.requestClient = axios.create({
-      httpsAgent: new https.Agent({
+      httpsAgent: new HttpsCookieAgent({
         rejectUnauthorized: false,
+        cookies: { jar },
       }),
     });
     this.omadacId = "";
@@ -74,7 +77,7 @@ class Omada extends utils.Adapter {
     })
       .then((res) => {
         //this.log.debug(JSON.stringify(res.data));
-        this.omadacId = res.headers.location.split("/")[1];
+        this.omadacId = res.request.path.split("/")[1];
         this.log.info(`Omada cID: ${this.omadacId}`);
       })
       .catch((error) => {
@@ -96,9 +99,9 @@ class Omada extends utils.Adapter {
     })
       .then((res) => {
         //  this.log.debug(JSON.stringify(res.data));
-        if (res.data.token) {
+        if (res.data.result && res.data.result.token) {
           this.log.info("Login successful");
-          this.session = res.data;
+          this.session = res.data.result;
           this.setState("info.connection", true, true);
         } else {
           this.log.error("Login failed: " + JSON.stringify(res.data));
