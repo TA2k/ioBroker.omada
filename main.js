@@ -326,7 +326,7 @@ class Omada extends utils.Adapter {
 
           this.ssids[wlan.site] = data.data;
 
-          this.json2iob.parse(wlan.site + ".ssids", data, {
+          await this.json2iob.parse(wlan.site + ".ssids", data, {
             forceIndex: null,
             write: true,
             preferedArrayName: "id",
