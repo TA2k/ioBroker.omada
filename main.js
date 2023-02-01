@@ -258,7 +258,7 @@ class Omada extends utils.Adapter {
               this.wlans = data.data;
               this.updateSsidSettings();
             }
-            this.json2iob.parse(device.id + "." + element.path, data, {
+            await this.json2iob.parse(device.id + "." + element.path, data, {
               forceIndex: element.forceIndex,
               preferedArrayName: element.preferedArrayName,
               preferedArrayDesc: element.preferedArrayDesc,
