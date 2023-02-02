@@ -246,6 +246,7 @@ class Omada extends utils.Adapter {
               return;
             }
             if (res.data.errorCode != 0) {
+              this.log.error(element.url);
               this.log.error(JSON.stringify(res.data));
               return;
             }
@@ -316,6 +317,7 @@ class Omada extends utils.Adapter {
             return;
           }
           if (res.data.errorCode != 0) {
+            this.log.error(url);
             this.log.error(JSON.stringify(res.data));
             return;
           }
@@ -347,6 +349,7 @@ class Omada extends utils.Adapter {
               return;
             }
           }
+          this.log.error(url);
           this.log.error(error);
           error.response && this.log.error(JSON.stringify(error.response.data));
         });
