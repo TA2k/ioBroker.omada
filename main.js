@@ -241,6 +241,7 @@ class Omada extends utils.Adapter {
           },
         })
           .then(async (res) => {
+            this.log.debug(element.url);
             this.log.debug(JSON.stringify(res.data));
             if (!res.data.result) {
               return;
