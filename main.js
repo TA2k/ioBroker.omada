@@ -231,7 +231,7 @@ class Omada extends utils.Adapter {
     for (const element of statusArray) {
       for (const device of this.deviceArray) {
         const url = element.url.replace("$id", device.id);
-
+        this.log.debug(`start Update ${element.desc} for ${device.name} (${device.id})`);
         await this.requestClient({
           method: "get",
           url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
@@ -260,6 +260,7 @@ class Omada extends utils.Adapter {
               this.wlans = data.data;
               this.updateSsidSettings();
             }
+            this.log.debug(`start parsing ${element.path} for ${device.name}`);
             await this.json2iob.parse(device.id + "." + element.path, data, {
               forceIndex: element.forceIndex,
               preferedArrayName: element.preferedArrayName,
@@ -267,6 +268,7 @@ class Omada extends utils.Adapter {
               channelName: element.desc,
               deleteBeforeUpdate: element.deleteBeforeUpdate,
             });
+            this.log.debug(`end parsing ${element.path} for ${device.name}`);
             // await this.setObjectNotExistsAsync(element.path + ".json", {
             //   type: "state",
             //   common: {
