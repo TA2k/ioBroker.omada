@@ -266,7 +266,7 @@ class Omada extends utils.Adapter {
             }
             if (element.path === "clients") {
               for (const client of this.clients) {
-                if (data.data.filter((e) => e.mac === client.amc).length === 0) {
+                if (data.data.filter((e) => e.mac === client.mac).length === 0) {
                   this.log.debug(`delete client ${client.mac} from ${device.name} (${device.id})`);
                   await this.delObjectAsync(device.id + ".clients." + client.mac, { recursive: true });
                 }
@@ -275,7 +275,7 @@ class Omada extends utils.Adapter {
             }
             if (element.path === "insight") {
               for (const insight of this.insights) {
-                if (data.data.filter((e) => e.mac === insight.amc).length === 0) {
+                if (data.data.filter((e) => e.mac === insight.mac).length === 0) {
                   this.log.debug(`delete insight ${insight.mac} from ${device.name} (${device.id})`);
                   await this.delObjectAsync(device.id + ".insight." + insight.mac, { recursive: true });
                 }
