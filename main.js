@@ -271,7 +271,7 @@ class Omada extends utils.Adapter {
                   await this.delObjectAsync(device.id + ".clients." + client.mac, { recursive: true });
                   for (const key in this.json2iob.alreadyCreatedObjects) {
                     if (key.startsWith(device.id + ".clients." + client.mac)) {
-                      delete this.alreadyCreatedObjects[key];
+                      delete this.json2iob.alreadyCreatedObjects[key];
                     }
                   }
                 }
@@ -285,7 +285,7 @@ class Omada extends utils.Adapter {
                   await this.delObjectAsync(device.id + ".insight." + insight.mac, { recursive: true });
                   for (const key in this.json2iob.alreadyCreatedObjects) {
                     if (key.startsWith(device.id + ".insight." + insight.mac)) {
-                      delete this.alreadyCreatedObjects[key];
+                      delete this.json2iob.alreadyCreatedObjects[key];
                     }
                   }
                 }
