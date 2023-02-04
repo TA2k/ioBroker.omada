@@ -269,6 +269,11 @@ class Omada extends utils.Adapter {
                 if (data.data.filter((e) => e.mac === client.mac).length === 0) {
                   this.log.debug(`delete client ${client.mac} from ${device.name} (${device.id})`);
                   await this.delObjectAsync(device.id + ".clients." + client.mac, { recursive: true });
+                  for (const key in this.json2iob.alreadyCreatedObjects) {
+                    if (key.startsWith(device.id + ".clients." + client.mac)) {
+                      delete this.alreadyCreatedObjects[key];
+                    }
+                  }
                 }
               }
               this.clients = data.data;
@@ -278,6 +283,11 @@ class Omada extends utils.Adapter {
                 if (data.data.filter((e) => e.mac === insight.mac).length === 0) {
                   this.log.debug(`delete insight ${insight.mac} from ${device.name} (${device.id})`);
                   await this.delObjectAsync(device.id + ".insight." + insight.mac, { recursive: true });
+                  for (const key in this.json2iob.alreadyCreatedObjects) {
+                    if (key.startsWith(device.id + ".insight." + insight.mac)) {
+                      delete this.alreadyCreatedObjects[key];
+                    }
+                  }
                 }
               }
               this.insights = data.data;
