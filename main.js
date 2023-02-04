@@ -26,6 +26,8 @@ class Omada extends utils.Adapter {
     this.on("unload", this.onUnload.bind(this));
     this.deviceArray = [];
     this.wlans = [];
+    this.clients = [];
+    this.insights = [];
     this.ssids = {};
     this.updateInterval = null;
     this.reLoginTimeout = null;
@@ -169,6 +171,8 @@ class Omada extends utils.Adapter {
               });
             });
             this.json2iob.parse(id + ".general", device, { forceIndex: true });
+            await this.delObjectAsync(id + ".clients", { recursive: true });
+            await this.delObjectAsync(id + ".insight", { recursive: true });
           }
         }
       })
@@ -190,7 +194,7 @@ class Omada extends utils.Adapter {
         desc: "List of clients",
         preferedArrayName: "mac",
         preferedArrayDesc: "name",
-        deleteBeforeUpdate: true,
+        deleteBeforeUpdate: false,
       },
       {
         url: "sites/$id/setting/wlans",
@@ -218,7 +222,7 @@ class Omada extends utils.Adapter {
         desc: "Insight Clients",
         preferedArrayName: "mac",
         preferedArrayDesc: "name",
-        deleteBeforeUpdate: true,
+        deleteBeforeUpdate: false,
       },
       {
         url: "sites/$id/site/alerts?currentPage=1&currentPageSize=100",
@@ -259,6 +263,24 @@ class Omada extends utils.Adapter {
             if (element.path === "wlans" && data.data) {
               this.wlans = data.data;
               this.updateSsidSettings();
+            }
+            if (element.path === "clients") {
+              for (const client of this.clients) {
+                if (data.data.filter((e) => e.mac === client.amc).length === 0) {
+                  this.log.debug(`delete client ${client.mac} from ${device.name} (${device.id})`);
+                  await this.delObjectAsync(device.id + ".clients." + client.mac, { recursive: true });
+                }
+              }
+              this.clients = data.data;
+            }
+            if (element.path === "insight") {
+              for (const insight of this.insights) {
+                if (data.data.filter((e) => e.mac === insight.amc).length === 0) {
+                  this.log.debug(`delete insight ${insight.mac} from ${device.name} (${device.id})`);
+                  await this.delObjectAsync(device.id + ".insight." + insight.mac, { recursive: true });
+                }
+              }
+              this.insights = data.data;
             }
             this.log.debug(`start parsing ${element.path} for ${device.name}`);
             await this.json2iob.parse(device.id + "." + element.path, data, {
