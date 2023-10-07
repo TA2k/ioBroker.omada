@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /*
  * Created with @iobroker/create-adapter v2.3.0
@@ -6,11 +6,11 @@
 
 // The adapter-core module gives you access to the core ioBroker functions
 // you need to create an adapter
-const utils = require("@iobroker/adapter-core");
-const axios = require("axios").default;
-const Json2iob = require("json2iob");
-const { CookieJar } = require("tough-cookie");
-const { HttpsCookieAgent } = require("http-cookie-agent/http");
+const utils = require('@iobroker/adapter-core');
+const axios = require('axios').default;
+const Json2iob = require('json2iob');
+const { CookieJar } = require('tough-cookie');
+const { HttpsCookieAgent } = require('http-cookie-agent/http');
 
 class Omada extends utils.Adapter {
   /**
@@ -19,11 +19,11 @@ class Omada extends utils.Adapter {
   constructor(options) {
     super({
       ...options,
-      name: "omada",
+      name: 'omada',
     });
-    this.on("ready", this.onReady.bind(this));
-    this.on("stateChange", this.onStateChange.bind(this));
-    this.on("unload", this.onUnload.bind(this));
+    this.on('ready', this.onReady.bind(this));
+    this.on('stateChange', this.onStateChange.bind(this));
+    this.on('unload', this.onUnload.bind(this));
     this.deviceArray = [];
     this.wlans = [];
     this.clients = [];
@@ -41,7 +41,7 @@ class Omada extends utils.Adapter {
         cookies: { jar },
       }),
     });
-    this.omadacId = "";
+    this.omadacId = '';
   }
 
   /**
@@ -49,19 +49,19 @@ class Omada extends utils.Adapter {
    */
   async onReady() {
     // Reset the connection indicator during startup
-    this.setState("info.connection", false, true);
+    this.setState('info.connection', false, true);
     if (this.config.interval < 0.5) {
-      this.log.info("Set interval to minimum 0.5");
+      this.log.info('Set interval to minimum 0.5');
       this.config.interval = 0.5;
     }
     if (!this.config.ip || !this.config.username || !this.config.password) {
-      this.log.error("Please set username and password in the instance settings");
+      this.log.error('Please set username and password in the instance settings');
       return;
     }
 
-    this.subscribeStates("*");
+    this.subscribeStates('*');
 
-    this.log.info("Login to Omada " + this.config.ip + ":" + this.config.port);
+    this.log.info('Login to Omada ' + this.config.ip + ':' + this.config.port);
     await this.login();
     if (this.session.token) {
       await this.getDeviceList();
@@ -76,25 +76,25 @@ class Omada extends utils.Adapter {
   }
   async login() {
     await this.requestClient({
-      method: "get",
+      method: 'get',
       url: `https://${this.config.ip}:${this.config.port}`,
     })
       .then((res) => {
         //this.log.debug(JSON.stringify(res.data));
-        this.omadacId = res.request.path.split("/")[1];
+        this.omadacId = res.request.path.split('/')[1];
         this.log.info(`Omada cID: ${this.omadacId}`);
       })
       .catch((error) => {
         this.log.error(error);
-        this.log.error("Login failed");
+        this.log.error('Login failed');
         error.response && this.log.error(JSON.stringify(error.response.data));
       });
     await this.requestClient({
-      method: "post",
+      method: 'post',
       url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/login`,
       headers: {
-        Accept: "application/json, text/javascript, */*; q=0.01",
-        "Content-Type": "application/json; charset=UTF-8",
+        Accept: 'application/json, text/javascript, */*; q=0.01',
+        'Content-Type': 'application/json; charset=UTF-8',
       },
       data: {
         username: this.config.username,
@@ -104,28 +104,28 @@ class Omada extends utils.Adapter {
       .then((res) => {
         //  this.log.debug(JSON.stringify(res.data));
         if (res.data.result && res.data.result.token) {
-          this.log.info("Login successful");
+          this.log.info('Login successful');
           this.session = res.data.result;
-          this.setState("info.connection", true, true);
+          this.setState('info.connection', true, true);
         } else {
-          this.log.error("Login failed: " + JSON.stringify(res.data));
+          this.log.error('Login failed: ' + JSON.stringify(res.data));
           return;
         }
       })
       .catch((error) => {
         this.log.error(error);
-        this.log.error("Login failed");
+        this.log.error('Login failed');
         error.response && this.log.error(JSON.stringify(error.response.data));
       });
   }
 
   async getDeviceList() {
     await this.requestClient({
-      method: "get",
+      method: 'get',
       url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/sites?currentPageSize=100&currentPage=1`,
       headers: {
-        Accept: "application/json, text/plain, */*",
-        "Csrf-Token": this.session.token,
+        Accept: 'application/json, text/plain, */*',
+        'Csrf-Token': this.session.token,
       },
     })
       .then(async (res) => {
@@ -141,28 +141,28 @@ class Omada extends utils.Adapter {
             const name = device.name;
 
             await this.setObjectNotExistsAsync(id, {
-              type: "device",
+              type: 'device',
               common: {
                 name: name,
               },
               native: {},
             });
-            await this.setObjectNotExistsAsync(id + ".remote", {
-              type: "channel",
+            await this.setObjectNotExistsAsync(id + '.remote', {
+              type: 'channel',
               common: {
-                name: "Remote Controls",
+                name: 'Remote Controls',
               },
               native: {},
             });
 
-            const remoteArray = [{ command: "Refresh", name: "True = Refresh" }];
+            const remoteArray = [{ command: 'Refresh', name: 'True = Refresh' }];
             remoteArray.forEach((remote) => {
-              this.setObjectNotExists(id + ".remote." + remote.command, {
-                type: "state",
+              this.setObjectNotExists(id + '.remote.' + remote.command, {
+                type: 'state',
                 common: {
-                  name: remote.name || "",
-                  type: remote.type || "boolean",
-                  role: remote.role || "button",
+                  name: remote.name || '',
+                  type: remote.type || 'boolean',
+                  role: remote.role || 'button',
                   def: remote.def != null ? remote.def : false,
                   write: true,
                   read: true,
@@ -170,9 +170,9 @@ class Omada extends utils.Adapter {
                 native: {},
               });
             });
-            this.json2iob.parse(id + ".general", device, { forceIndex: true });
-            await this.delObjectAsync(id + ".clients", { recursive: true });
-            await this.delObjectAsync(id + ".insight", { recursive: true });
+            this.json2iob.parse(id + '.general', device, { forceIndex: true });
+            await this.delObjectAsync(id + '.clients', { recursive: true });
+            await this.delObjectAsync(id + '.insight', { recursive: true });
           }
         }
       })
@@ -189,59 +189,59 @@ class Omada extends utils.Adapter {
     // const currentDate = Math.round(Date.now() / 1000);
     const statusArray = [
       {
-        url: "sites/$id/clients?currentPageSize=500&currentPage=1",
-        path: "clients",
-        desc: "List of clients",
-        preferedArrayName: "mac",
-        preferedArrayDesc: "name",
+        url: 'sites/$id/insight/clients?currentPageSize=500&currentPage=1',
+        path: 'clients',
+        desc: 'List of clients',
+        preferedArrayName: 'mac',
+        preferedArrayDesc: 'name',
         deleteBeforeUpdate: false,
       },
       {
-        url: "sites/$id/setting/wlans",
-        path: "wlans",
-        desc: "List of wlans",
-        preferedArrayName: "id",
-        preferedArrayDesc: "name",
+        url: 'sites/$id/setting/wlans',
+        path: 'wlans',
+        desc: 'List of wlans',
+        preferedArrayName: 'id',
+        preferedArrayDesc: 'name',
       },
       {
-        url: "sites/$id/dashboard/overviewDiagram",
-        path: "dashboardOverviewDiagram",
-        desc: "Dashboard Overview Diagram",
+        url: 'sites/$id/dashboard/overviewDiagram',
+        path: 'dashboardOverviewDiagram',
+        desc: 'Dashboard Overview Diagram',
       },
       {
-        url: "sites/$id/grid/devices?currentPage=1&currentPageSize=500",
-        path: "devices",
-        desc: "Devices",
-        preferedArrayName: "mac",
-        preferedArrayDesc: "name",
+        url: 'sites/$id/grid/devices?currentPage=1&currentPageSize=500',
+        path: 'devices',
+        desc: 'Devices',
+        preferedArrayName: 'mac',
+        preferedArrayDesc: 'name',
       },
 
       {
-        url: "sites/$id/insight/clients?currentPage=1&currentPageSize=500",
-        path: "insight",
-        desc: "Insight Clients",
-        preferedArrayName: "mac",
-        preferedArrayDesc: "name",
+        url: 'sites/$id/insight/clients?currentPage=1&currentPageSize=500',
+        path: 'insight',
+        desc: 'Insight Clients',
+        preferedArrayName: 'mac',
+        preferedArrayDesc: 'name',
         deleteBeforeUpdate: false,
       },
       {
-        url: "sites/$id/site/alerts?currentPage=1&currentPageSize=100",
-        path: "alerts",
-        desc: "Alerts",
+        url: 'sites/$id/site/alerts?currentPage=1&currentPageSize=100',
+        path: 'alerts',
+        desc: 'Alerts',
         forceIndex: true,
       },
     ];
 
     for (const element of statusArray) {
       for (const device of this.deviceArray) {
-        const url = element.url.replace("$id", device.id);
+        const url = element.url.replace('$id', device.id);
         this.log.debug(`start Update ${element.desc} for ${device.name} (${device.id})`);
         await this.requestClient({
-          method: "get",
+          method: 'get',
           url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
           headers: {
-            Accept: "application/json, text/plain, */*",
-            "Csrf-Token": this.session.token,
+            Accept: 'application/json, text/plain, */*',
+            'Csrf-Token': this.session.token,
           },
         })
           .then(async (res) => {
@@ -260,17 +260,17 @@ class Omada extends utils.Adapter {
               data = data.result;
             }
 
-            if (element.path === "wlans" && data.data) {
+            if (element.path === 'wlans' && data.data) {
               this.wlans = data.data;
               this.updateSsidSettings();
             }
-            if (element.path === "clients") {
+            if (element.path === 'clients') {
               for (const client of this.clients) {
                 if (data.data.filter((e) => e.mac === client.mac).length === 0) {
                   this.log.debug(`delete client ${client.mac} from ${device.name} (${device.id})`);
-                  await this.delObjectAsync(device.id + ".clients." + client.mac, { recursive: true });
+                  await this.delObjectAsync(device.id + '.clients.' + client.mac, { recursive: true });
                   for (const key in this.json2iob.alreadyCreatedObjects) {
-                    if (key.startsWith(device.id + ".clients." + client.mac)) {
+                    if (key.startsWith(device.id + '.clients.' + client.mac)) {
                       delete this.json2iob.alreadyCreatedObjects[key];
                     }
                   }
@@ -278,13 +278,13 @@ class Omada extends utils.Adapter {
               }
               this.clients = data.data;
             }
-            if (element.path === "insight") {
+            if (element.path === 'insight') {
               for (const insight of this.insights) {
                 if (data.data.filter((e) => e.mac === insight.mac).length === 0) {
                   this.log.debug(`delete insight ${insight.mac} from ${device.name} (${device.id})`);
-                  await this.delObjectAsync(device.id + ".insight." + insight.mac, { recursive: true });
+                  await this.delObjectAsync(device.id + '.insight.' + insight.mac, { recursive: true });
                   for (const key in this.json2iob.alreadyCreatedObjects) {
-                    if (key.startsWith(device.id + ".insight." + insight.mac)) {
+                    if (key.startsWith(device.id + '.insight.' + insight.mac)) {
                       delete this.json2iob.alreadyCreatedObjects[key];
                     }
                   }
@@ -293,7 +293,7 @@ class Omada extends utils.Adapter {
               this.insights = data.data;
             }
             this.log.debug(`start parsing ${element.path} for ${device.name}`);
-            await this.json2iob.parse(device.id + "." + element.path, data, {
+            await this.json2iob.parse(device.id + '.' + element.path, data, {
               forceIndex: element.forceIndex,
               preferedArrayName: element.preferedArrayName,
               preferedArrayDesc: element.preferedArrayDesc,
@@ -318,7 +318,7 @@ class Omada extends utils.Adapter {
             if (error.response) {
               if (error.response.status === 401) {
                 error.response && this.log.debug(JSON.stringify(error.response.data));
-                this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
+                this.log.info(element.path + ' receive 401 error. Refresh Token in 60 seconds');
                 this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
                 this.refreshTokenTimeout = setTimeout(() => {
                   this.refreshToken();
@@ -337,13 +337,13 @@ class Omada extends utils.Adapter {
 
   async updateSsidSettings() {
     for (const wlan of this.wlans) {
-      const url = "sites/" + wlan.site + "/setting/wlans/" + wlan.id + "/ssids?currentPage=1&currentPageSize=500";
+      const url = 'sites/' + wlan.site + '/setting/wlans/' + wlan.id + '/ssids?currentPage=1&currentPageSize=500';
       await this.requestClient({
-        method: "get",
+        method: 'get',
         url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
         headers: {
-          Accept: "application/json, text/plain, */*",
-          "Csrf-Token": this.session.token,
+          Accept: 'application/json, text/plain, */*',
+          'Csrf-Token': this.session.token,
         },
       })
         .then(async (res) => {
@@ -363,19 +363,19 @@ class Omada extends utils.Adapter {
 
           this.ssids[wlan.site] = data.data;
 
-          await this.json2iob.parse(wlan.site + ".ssids", data, {
+          await this.json2iob.parse(wlan.site + '.ssids', data, {
             forceIndex: null,
             write: true,
-            preferedArrayName: "id",
-            preferedArrayDesc: "name",
-            channelName: "List of SSIDs",
+            preferedArrayName: 'id',
+            preferedArrayDesc: 'name',
+            channelName: 'List of SSIDs',
           });
         })
         .catch((error) => {
           if (error.response) {
             if (error.response.status === 401) {
               error.response && this.log.debug(JSON.stringify(error.response.data));
-              this.log.info(" receive 401 error. Refresh Token in 60 seconds");
+              this.log.info(' receive 401 error. Refresh Token in 60 seconds');
               this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
               this.refreshTokenTimeout = setTimeout(() => {
                 this.refreshToken();
@@ -391,7 +391,7 @@ class Omada extends utils.Adapter {
     }
   }
   async refreshToken() {
-    this.log.debug("Refresh token");
+    this.log.debug('Refresh token');
     await this.login();
   }
   sleep(ms) {
@@ -403,7 +403,7 @@ class Omada extends utils.Adapter {
    */
   onUnload(callback) {
     try {
-      this.setState("info.connection", false, true);
+      this.setState('info.connection', false, true);
       this.reLoginTimeout && clearTimeout(this.reLoginTimeout);
       this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
       this.updateInterval && clearInterval(this.updateInterval);
@@ -422,7 +422,7 @@ class Omada extends utils.Adapter {
   async onStateChange(id, state) {
     if (state) {
       if (!state.ack) {
-        const idArray = id.split(".");
+        const idArray = id.split('.');
         const siteId = idArray[2];
         // const folder = idArray[3];
         const ssidId = idArray[4];
@@ -430,18 +430,18 @@ class Omada extends utils.Adapter {
 
         const ssidStatus = this.ssids[siteId].find((ssid) => ssid.id == ssidId);
         if (!ssidStatus) {
-          this.log.error("SSID not found");
+          this.log.error('SSID not found');
           return;
         }
         ssidStatus[command] = state.val;
         this.log.debug(JSON.stringify(ssidStatus));
         await this.requestClient({
-          method: "patch",
+          method: 'patch',
           url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/sites/${siteId}/setting/wlans/${ssidStatus.wlanId}/ssids/${ssidId}`,
           headers: {
-            "Content-Type": " application/json;charset=UTF-8",
-            Accept: "application/json, text/plain, */*",
-            "Csrf-Token": this.session.token,
+            'Content-Type': ' application/json;charset=UTF-8',
+            Accept: 'application/json, text/plain, */*',
+            'Csrf-Token': this.session.token,
           },
           data: ssidStatus,
         })
@@ -456,7 +456,7 @@ class Omada extends utils.Adapter {
             if (error.response) {
               if (error.response.status === 401) {
                 error.response && this.log.debug(JSON.stringify(error.response.data));
-                this.log.info(" receive 401 error. Refresh Token in 60 seconds");
+                this.log.info(' receive 401 error. Refresh Token in 60 seconds');
                 this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
                 this.refreshTokenTimeout = setTimeout(() => {
                   this.refreshToken();
