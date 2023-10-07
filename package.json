@@ -1,6 +1,6 @@
 {
   "name": "iobroker.omada",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Adapter for TP-Link Omada",
   "author": {
     "name": "TA2k",

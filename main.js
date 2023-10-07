@@ -70,12 +70,9 @@ class Omada extends utils.Adapter {
         await this.updateDevices();
       }, this.config.interval * 1000);
     }
-    this.refreshTokenInterval = setInterval(
-      () => {
-        this.refreshToken();
-      },
-      24 * 60 * 60 * 1000,
-    );
+    this.refreshTokenInterval = setInterval(() => {
+      this.refreshToken();
+    }, 24 * 60 * 60 * 1000);
   }
   async login() {
     await this.requestClient({
@@ -192,7 +189,7 @@ class Omada extends utils.Adapter {
     // const currentDate = Math.round(Date.now() / 1000);
     const statusArray = [
       {
-        url: 'sites/$id/clients?currentPageSize=500&currentPage=1',
+        url: 'sites/$id/clients?currentPageSize=500&currentPage=1&filters.active=true',
         path: 'clients',
         desc: 'List of clients',
         preferedArrayName: 'mac',
