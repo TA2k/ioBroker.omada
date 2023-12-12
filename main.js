@@ -70,9 +70,12 @@ class Omada extends utils.Adapter {
         await this.updateDevices();
       }, this.config.interval * 1000);
     }
-    this.refreshTokenInterval = setInterval(() => {
-      this.refreshToken();
-    }, 24 * 60 * 60 * 1000);
+    this.refreshTokenInterval = setInterval(
+      () => {
+        this.refreshToken();
+      },
+      6 * 60 * 60 * 1000,
+    );
   }
   async login() {
     await this.requestClient({
@@ -81,14 +84,20 @@ class Omada extends utils.Adapter {
     })
       .then((res) => {
         //this.log.debug(JSON.stringify(res.data));
-        this.omadacId = res.request.path.split('/')[1];
-        this.log.info(`Omada cID: ${this.omadacId}`);
+        const omadacId = res.request.path.split('/')[1];
+        if (omadacId) {
+          this.omadacId = omadacId;
+          this.log.info(`Omada cID: ${this.omadacId}`);
+        } else {
+          this.log.debug('Omada cID not found');
+        }
       })
       .catch((error) => {
         this.log.error(error);
         this.log.error('Login failed');
         error.response && this.log.error(JSON.stringify(error.response.data));
       });
+
     await this.requestClient({
       method: 'post',
       url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/login`,
@@ -247,12 +256,13 @@ class Omada extends utils.Adapter {
           .then(async (res) => {
             this.log.debug(element.url);
             this.log.debug(JSON.stringify(res.data));
-            if (!res.data.result) {
-              return;
-            }
+
             if (res.data.errorCode != 0) {
               this.log.error(element.url);
               this.log.error(JSON.stringify(res.data));
+              return;
+            }
+            if (!res.data.result) {
               return;
             }
             let data = res.data.result;

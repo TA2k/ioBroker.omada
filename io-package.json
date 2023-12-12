@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "omada",
-    "version": "0.0.3",
+    "version": "0.0.6",
     "news": {
+      "0.0.6": {
+        "en": "Fix relogin after 24h",
+        "de": "Fix für erneute Anmeldung nach 24h"
+      },
       "0.0.3": {
         "en": "Fix client fetching",
         "de": "Fix für client Abrufung"
