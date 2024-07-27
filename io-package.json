@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "omada",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "news": {
+      "0.0.7": {
+        "en": "Fix for omadaId",
+        "de": "Fix für omadaId"
+      },
       "0.0.6": {
         "en": "Fix relogin after 24h",
         "de": "Fix für erneute Anmeldung nach 24h"
