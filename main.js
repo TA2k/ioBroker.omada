@@ -80,13 +80,12 @@ class Omada extends utils.Adapter {
   async login() {
     await this.requestClient({
       method: 'get',
-      url: `https://${this.config.ip}:${this.config.port}`,
+      url: `https://${this.config.ip}:${this.config.port}/api/info`,
     })
       .then((res) => {
-        //this.log.debug(JSON.stringify(res.data));
-        const omadacId = res.request.path.split('/')[1];
-        if (omadacId) {
-          this.omadacId = omadacId;
+        this.log.debug(JSON.stringify(res.data));
+        if (res.data && res.data.result && res.data.result.omadacId) {
+          this.omadacId = res.data.result.omadacId;
           this.log.info(`Omada cID: ${this.omadacId}`);
         } else {
           this.log.debug('Omada cID not found');
@@ -97,7 +96,6 @@ class Omada extends utils.Adapter {
         this.log.error('Login failed');
         error.response && this.log.error(JSON.stringify(error.response.data));
       });
-
     await this.requestClient({
       method: 'post',
       url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/login`,
