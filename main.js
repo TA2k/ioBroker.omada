@@ -41,6 +41,17 @@ class Omada extends utils.Adapter {
         cookies: { jar },
       }),
     });
+    this.requestClient.interceptors.response.use((response) => {
+      if (typeof response.data === 'string' && response.data.includes('<html')) {
+        this.log.warn('Received HTML instead of JSON. Session expired. Refresh Token in 5 seconds');
+        this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
+        this.refreshTokenTimeout = setTimeout(() => {
+          this.refreshToken();
+        }, 5000);
+        return Promise.reject(new Error('Session expired - received HTML response'));
+      }
+      return response;
+    });
     this.omadacId = '';
   }
 
@@ -133,6 +144,7 @@ class Omada extends utils.Adapter {
       headers: {
         Accept: 'application/json, text/plain, */*',
         'Csrf-Token': this.session.token,
+        'Omada-Request-Source': 'web-local',
       },
     })
       .then(async (res) => {
@@ -196,12 +208,13 @@ class Omada extends utils.Adapter {
     // const currentDate = Math.round(Date.now() / 1000);
     const statusArray = [
       {
-        url: 'sites/$id/clients?currentPageSize=500&currentPage=1&filters.active=true',
+        url: 'sites/$id/clients',
         path: 'clients',
         desc: 'List of clients',
         preferedArrayName: 'mac',
         preferedArrayDesc: 'name',
         deleteBeforeUpdate: false,
+        openapi: true,
       },
       {
         url: 'sites/$id/setting/wlans',
@@ -243,20 +256,42 @@ class Omada extends utils.Adapter {
       for (const device of this.deviceArray) {
         const url = element.url.replace('$id', device.id);
         this.log.debug(`start Update ${element.desc} for ${device.name} (${device.id})`);
-        await this.requestClient({
-          method: 'get',
-          url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
-          headers: {
-            Accept: 'application/json, text/plain, */*',
-            'Csrf-Token': this.session.token,
-          },
-        })
+        const requestConfig = element.openapi
+          ? {
+              method: 'post',
+              url: `https://${this.config.ip}:${this.config.port}/openapi/v2/${this.omadacId}/${url}`,
+              headers: {
+                Accept: 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+                'Csrf-Token': this.session.token,
+                'Omada-Request-Source': 'web-local',
+              },
+              data: { filters: { active: true }, sorts: {}, pageSize: 500, page: 1 },
+            }
+          : {
+              method: 'get',
+              url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
+              headers: {
+                Accept: 'application/json, text/plain, */*',
+                'Csrf-Token': this.session.token,
+                'Omada-Request-Source': 'web-local',
+              },
+            };
+        await this.requestClient(requestConfig)
           .then(async (res) => {
             this.log.debug(element.url);
             this.log.debug(JSON.stringify(res.data));
 
+            if (res.data.errorCode == -1200) {
+              this.log.info('Token expired. Refresh Token in 5 seconds');
+              this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
+              this.refreshTokenTimeout = setTimeout(() => {
+                this.refreshToken();
+              }, 5000);
+              return;
+            }
             if (res.data.errorCode != 0) {
-              this.log.error(element.url);
+              this.log.error(url);
               this.log.error(JSON.stringify(res.data));
               return;
             }
@@ -326,16 +361,16 @@ class Omada extends utils.Adapter {
             if (error.response) {
               if (error.response.status === 401) {
                 error.response && this.log.debug(JSON.stringify(error.response.data));
-                this.log.info(element.path + ' receive 401 error. Refresh Token in 60 seconds');
+                this.log.info(element.path + ' receive 401 error. Refresh Token in 5 seconds');
                 this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
                 this.refreshTokenTimeout = setTimeout(() => {
                   this.refreshToken();
-                }, 1000 * 60);
+                }, 5000);
 
                 return;
               }
             }
-            this.log.error(element.url);
+            this.log.error(url);
             this.log.error(error);
             error.response && this.log.error(JSON.stringify(error.response.data));
           });
@@ -352,11 +387,20 @@ class Omada extends utils.Adapter {
         headers: {
           Accept: 'application/json, text/plain, */*',
           'Csrf-Token': this.session.token,
+          'Omada-Request-Source': 'web-local',
         },
       })
         .then(async (res) => {
           this.log.debug(JSON.stringify(res.data));
           if (!res.data.result) {
+            return;
+          }
+          if (res.data.errorCode == -1200) {
+            this.log.info('Token expired. Refresh Token in 5 seconds');
+            this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
+            this.refreshTokenTimeout = setTimeout(() => {
+              this.refreshToken();
+            }, 5000);
             return;
           }
           if (res.data.errorCode != 0) {
@@ -383,11 +427,11 @@ class Omada extends utils.Adapter {
           if (error.response) {
             if (error.response.status === 401) {
               error.response && this.log.debug(JSON.stringify(error.response.data));
-              this.log.info(' receive 401 error. Refresh Token in 60 seconds');
+              this.log.info(' receive 401 error. Refresh Token in 5 seconds');
               this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
               this.refreshTokenTimeout = setTimeout(() => {
                 this.refreshToken();
-              }, 1000 * 60);
+              }, 5000);
 
               return;
             }
@@ -450,6 +494,7 @@ class Omada extends utils.Adapter {
             'Content-Type': ' application/json;charset=UTF-8',
             Accept: 'application/json, text/plain, */*',
             'Csrf-Token': this.session.token,
+            'Omada-Request-Source': 'web-local',
           },
           data: ssidStatus,
         })
@@ -464,11 +509,11 @@ class Omada extends utils.Adapter {
             if (error.response) {
               if (error.response.status === 401) {
                 error.response && this.log.debug(JSON.stringify(error.response.data));
-                this.log.info(' receive 401 error. Refresh Token in 60 seconds');
+                this.log.info(' receive 401 error. Refresh Token in 5 seconds');
                 this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
                 this.refreshTokenTimeout = setTimeout(() => {
                   this.refreshToken();
-                }, 1000 * 60);
+                }, 5000);
 
                 return;
               }

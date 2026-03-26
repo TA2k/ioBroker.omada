@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "omada",
-    "version": "0.0.7",
+    "version": "0.1.0",
     "news": {
+      "0.1.0": {
+        "en": "BREAKING: Requires Omada SDN Controller >= 6.2.0. Clients endpoint switched to OpenAPI.",
+        "de": "BREAKING: Erfordert Omada SDN Controller >= 6.2.0. Clients-Endpunkt auf OpenAPI umgestellt."
+      },
       "0.0.7": {
         "en": "Fix for omadaId",
         "de": "Fix für omadaId"

@@ -15,6 +15,8 @@
 
 Adapter for TP-Link Omada
 
+**Voraussetzung:** Omada SDN Controller >= 6.2.0
+
 # Loginablauf
 
 Die Omada IP, Login und Passwort eingeben.
@@ -29,6 +31,13 @@ Ssids Einstellungen können via omada.0.id.ssids geändert werden
 <https://forum.iobroker.net/topic/62562/test-adapter-omada-tp-link>
 
 ## Changelog
+
+### 0.1.0 (2026-03-26)
+
+- (BREAKING) Erfordert Omada SDN Controller >= 6.2.0
+- Clients-Endpunkt auf OpenAPI v2 (POST) umgestellt
+- Omada-Request-Source Header hinzugefügt
+- Fehlerbehebung: Aufgelöste URL wird im Error-Log angezeigt
 
 ### 0.0.1
 
