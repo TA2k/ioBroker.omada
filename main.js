@@ -65,14 +65,25 @@ class Omada extends utils.Adapter {
       this.log.info('Set interval to minimum 0.5');
       this.config.interval = 0.5;
     }
-    if (!this.config.ip || !this.config.username || !this.config.password) {
-      this.log.error('Please set username and password in the instance settings');
-      return;
+    this.isCloud = this.config.connectionType === 'cloud';
+    if (this.isCloud) {
+      if (!this.config.cloudUrl || !this.config.cloudOmadacId || !this.config.clientId || !this.config.clientSecret) {
+        this.log.error('Please set Open API URL, Omada ID, Client ID and Client Secret in the instance settings');
+        return;
+      }
+      this.baseUrl = this.config.cloudUrl.trim().replace(/\/+$/, '');
+      this.omadacId = this.config.cloudOmadacId.trim();
+    } else {
+      if (!this.config.ip || !this.config.username || !this.config.password) {
+        this.log.error('Please set username and password in the instance settings');
+        return;
+      }
+      this.baseUrl = `https://${this.config.ip}:${this.config.port}`;
     }
 
     this.subscribeStates('*');
 
-    this.log.info('Login to Omada ' + this.config.ip + ':' + this.config.port);
+    this.log.info('Login to Omada ' + this.baseUrl);
     await this.login();
     if (this.session.token) {
       await this.getDeviceList();
@@ -81,17 +92,22 @@ class Omada extends utils.Adapter {
         await this.updateDevices();
       }, this.config.interval * 1000);
     }
+    // Open API access tokens expire after 2 hours
     this.refreshTokenInterval = setInterval(
       () => {
         this.refreshToken();
       },
-      6 * 60 * 60 * 1000,
+      (this.isCloud ? 1 : 6) * 60 * 60 * 1000,
     );
   }
   async login() {
+    if (this.isCloud) {
+      await this.loginCloud();
+      return;
+    }
     await this.requestClient({
       method: 'get',
-      url: `https://${this.config.ip}:${this.config.port}/api/info`,
+      url: `${this.baseUrl}/api/info`,
     })
       .then((res) => {
         this.log.debug(JSON.stringify(res.data));
@@ -109,7 +125,7 @@ class Omada extends utils.Adapter {
       });
     await this.requestClient({
       method: 'post',
-      url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/login`,
+      url: `${this.baseUrl}/${this.omadacId}/api/v2/login`,
       headers: {
         Accept: 'application/json, text/javascript, */*; q=0.01',
         'Content-Type': 'application/json; charset=UTF-8',
@@ -137,15 +153,62 @@ class Omada extends utils.Adapter {
       });
   }
 
+  // Omada Open API (cloud based controller) using client credentials
+  async loginCloud() {
+    await this.requestClient({
+      method: 'post',
+      url: `${this.baseUrl}/openapi/authorize/token?grant_type=client_credentials`,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: {
+        omadacId: this.omadacId,
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+      },
+    })
+      .then((res) => {
+        if (res.data.errorCode === 0 && res.data.result && res.data.result.accessToken) {
+          this.log.info('Login successful');
+          this.session = { token: res.data.result.accessToken };
+          this.setState('info.connection', true, true);
+        } else {
+          this.log.error('Login failed: ' + JSON.stringify(res.data));
+        }
+      })
+      .catch((error) => {
+        this.log.error(error);
+        this.log.error('Login failed');
+        error.response && this.log.error(JSON.stringify(error.response.data));
+      });
+  }
+
+  getHeaders() {
+    if (this.isCloud) {
+      return {
+        Accept: 'application/json',
+        Authorization: `AccessToken=${this.session.token}`,
+      };
+    }
+    return {
+      Accept: 'application/json, text/plain, */*',
+      'Csrf-Token': this.session.token,
+      'Omada-Request-Source': 'web-local',
+    };
+  }
+
+  isTokenExpired(errorCode) {
+    // -1200: local session expired, -44112/-44113: Open API access token expired/invalid
+    return [-1200, -44112, -44113].includes(errorCode);
+  }
+
   async getDeviceList() {
     await this.requestClient({
       method: 'get',
-      url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/sites?currentPageSize=100&currentPage=1`,
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Csrf-Token': this.session.token,
-        'Omada-Request-Source': 'web-local',
-      },
+      url: this.isCloud
+        ? `${this.baseUrl}/openapi/v1/${this.omadacId}/sites?page=1&pageSize=100`
+        : `${this.baseUrl}/${this.omadacId}/api/v2/sites?currentPageSize=100&currentPage=1`,
+      headers: this.getHeaders(),
     })
       .then(async (res) => {
         this.log.debug(JSON.stringify(res.data));
@@ -154,9 +217,9 @@ class Omada extends utils.Adapter {
           for (const device of res.data.result.data) {
             delete device.deviceAccount;
             this.log.debug(JSON.stringify(device));
-            const id = device.id;
+            const id = device.id || device.siteId;
 
-            this.deviceArray.push(device);
+            this.deviceArray.push({ ...device, id });
             const name = device.name;
 
             await this.setObjectNotExistsAsync(id, {
@@ -218,18 +281,22 @@ class Omada extends utils.Adapter {
       },
       {
         url: 'sites/$id/setting/wlans',
+        cloudUrl: 'sites/$id/wireless-network/wlans',
         path: 'wlans',
         desc: 'List of wlans',
         preferedArrayName: 'id',
+        cloudPreferedArrayName: 'wlanId',
         preferedArrayDesc: 'name',
       },
       {
         url: 'sites/$id/dashboard/overviewDiagram',
+        cloudUrl: 'sites/$id/dashboard/overview-diagram',
         path: 'dashboardOverviewDiagram',
         desc: 'Dashboard Overview Diagram',
       },
       {
         url: 'sites/$id/grid/devices?currentPage=1&currentPageSize=500',
+        cloudUrl: 'sites/$id/devices?page=1&pageSize=1000',
         path: 'devices',
         desc: 'Devices',
         preferedArrayName: 'mac',
@@ -246,6 +313,7 @@ class Omada extends utils.Adapter {
       },
       {
         url: 'sites/$id/site/alerts?currentPage=1&currentPageSize=100',
+        cloudUrl: `sites/$id/logs/alerts?page=1&pageSize=100&filters.timeStart=0&filters.timeEnd=${Date.now()}&filters.resolved=false`,
         path: 'alerts',
         desc: 'Alerts',
         forceIndex: true,
@@ -253,36 +321,33 @@ class Omada extends utils.Adapter {
     ];
 
     for (const element of statusArray) {
+      // Open API has no equivalent for some endpoints (e.g. insight clients)
+      if (this.isCloud && !element.openapi && !element.cloudUrl) {
+        continue;
+      }
       for (const device of this.deviceArray) {
-        const url = element.url.replace('$id', device.id);
+        const url = (this.isCloud && element.cloudUrl ? element.cloudUrl : element.url).replace('$id', device.id);
         this.log.debug(`start Update ${element.desc} for ${device.name} (${device.id})`);
         const requestConfig = element.openapi
           ? {
               method: 'post',
-              url: `https://${this.config.ip}:${this.config.port}/openapi/v2/${this.omadacId}/${url}`,
-              headers: {
-                Accept: 'application/json, text/plain, */*',
-                'Content-Type': 'application/json',
-                'Csrf-Token': this.session.token,
-                'Omada-Request-Source': 'web-local',
-              },
+              url: `${this.baseUrl}/openapi/v2/${this.omadacId}/${url}`,
+              headers: { ...this.getHeaders(), 'Content-Type': 'application/json' },
               data: { filters: { active: true }, sorts: {}, pageSize: 500, page: 1 },
             }
           : {
               method: 'get',
-              url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
-              headers: {
-                Accept: 'application/json, text/plain, */*',
-                'Csrf-Token': this.session.token,
-                'Omada-Request-Source': 'web-local',
-              },
+              url: this.isCloud
+                ? `${this.baseUrl}/openapi/v1/${this.omadacId}/${url}`
+                : `${this.baseUrl}/${this.omadacId}/api/v2/${url}`,
+              headers: this.getHeaders(),
             };
         await this.requestClient(requestConfig)
           .then(async (res) => {
             this.log.debug(element.url);
             this.log.debug(JSON.stringify(res.data));
 
-            if (res.data.errorCode == -1200) {
+            if (this.isTokenExpired(res.data.errorCode)) {
               this.log.info('Token expired. Refresh Token in 5 seconds');
               this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
               this.refreshTokenTimeout = setTimeout(() => {
@@ -303,8 +368,8 @@ class Omada extends utils.Adapter {
               data = data.result;
             }
 
-            if (element.path === 'wlans' && data.data) {
-              this.wlans = data.data;
+            if (element.path === 'wlans' && (data.data || Array.isArray(data))) {
+              this.wlans = data.data || data;
               this.updateSsidSettings();
             }
             if (element.path === 'clients') {
@@ -338,7 +403,7 @@ class Omada extends utils.Adapter {
             this.log.debug(`start parsing ${element.path} for ${device.name}`);
             await this.json2iob.parse(device.id + '.' + element.path, data, {
               forceIndex: element.forceIndex,
-              preferedArrayName: element.preferedArrayName,
+              preferedArrayName: (this.isCloud && element.cloudPreferedArrayName) || element.preferedArrayName,
               preferedArrayDesc: element.preferedArrayDesc,
               channelName: element.desc,
               deleteBeforeUpdate: element.deleteBeforeUpdate,
@@ -380,22 +445,22 @@ class Omada extends utils.Adapter {
 
   async updateSsidSettings() {
     for (const wlan of this.wlans) {
-      const url = 'sites/' + wlan.site + '/setting/wlans/' + wlan.id + '/ssids?currentPage=1&currentPageSize=500';
+      const url = this.isCloud
+        ? `sites/${wlan.site}/wireless-network/wlans/${wlan.wlanId}/ssids?page=1&pageSize=100`
+        : 'sites/' + wlan.site + '/setting/wlans/' + wlan.id + '/ssids?currentPage=1&currentPageSize=500';
       await this.requestClient({
         method: 'get',
-        url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/${url}`,
-        headers: {
-          Accept: 'application/json, text/plain, */*',
-          'Csrf-Token': this.session.token,
-          'Omada-Request-Source': 'web-local',
-        },
+        url: this.isCloud
+          ? `${this.baseUrl}/openapi/v1/${this.omadacId}/${url}`
+          : `${this.baseUrl}/${this.omadacId}/api/v2/${url}`,
+        headers: this.getHeaders(),
       })
         .then(async (res) => {
           this.log.debug(JSON.stringify(res.data));
           if (!res.data.result) {
             return;
           }
-          if (res.data.errorCode == -1200) {
+          if (this.isTokenExpired(res.data.errorCode)) {
             this.log.info('Token expired. Refresh Token in 5 seconds');
             this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
             this.refreshTokenTimeout = setTimeout(() => {
@@ -485,19 +550,30 @@ class Omada extends utils.Adapter {
           this.log.error('SSID not found');
           return;
         }
+        if (this.isCloud && command !== 'ssidEnable') {
+          this.log.warn(`Changing ${command} is not supported via Open API. Only ssidEnable can be changed.`);
+          return;
+        }
         ssidStatus[command] = state.val;
         this.log.debug(JSON.stringify(ssidStatus));
-        await this.requestClient({
-          method: 'patch',
-          url: `https://${this.config.ip}:${this.config.port}/${this.omadacId}/api/v2/sites/${siteId}/setting/wlans/${ssidStatus.wlanId}/ssids/${ssidId}`,
-          headers: {
-            'Content-Type': ' application/json;charset=UTF-8',
-            Accept: 'application/json, text/plain, */*',
-            'Csrf-Token': this.session.token,
-            'Omada-Request-Source': 'web-local',
-          },
-          data: ssidStatus,
-        })
+        await this.requestClient(
+          this.isCloud
+            ? {
+                method: 'patch',
+                url: `${this.baseUrl}/openapi/v1/${this.omadacId}/sites/${siteId}/wireless-network/ssids/${ssidId}/enable`,
+                headers: { ...this.getHeaders(), 'Content-Type': 'application/json' },
+                data: { ssidEnable: !!state.val },
+              }
+            : {
+                method: 'patch',
+                url: `${this.baseUrl}/${this.omadacId}/api/v2/sites/${siteId}/setting/wlans/${ssidStatus.wlanId}/ssids/${ssidId}`,
+                headers: {
+                  ...this.getHeaders(),
+                  'Content-Type': ' application/json;charset=UTF-8',
+                },
+                data: ssidStatus,
+              },
+        )
           .then(async (res) => {
             if (res.data.errorCode != 0) {
               this.log.error(JSON.stringify(res.data));

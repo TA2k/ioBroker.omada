@@ -91,14 +91,19 @@
       }
     ]
   },
-  "encryptedNative": ["password"],
-  "protectedNative": ["password"],
+  "encryptedNative": ["password", "clientSecret"],
+  "protectedNative": ["password", "clientSecret"],
   "native": {
+    "connectionType": "local",
     "username": "",
     "password": "",
     "ip": "",
     "interval": 30,
-    "port": "8043"
+    "port": "8043",
+    "cloudUrl": "",
+    "cloudOmadacId": "",
+    "clientId": "",
+    "clientSecret": ""
   },
   "objects": [],
   "instanceObjects": [
