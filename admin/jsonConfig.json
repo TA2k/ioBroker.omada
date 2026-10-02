@@ -2,6 +2,31 @@
   "i18n": true,
   "type": "panel",
   "items": {
+    "connectionType": {
+      "type": "select",
+      "label": {
+        "en": "Controller type",
+        "de": "Controller-Typ"
+      },
+      "options": [
+        {
+          "label": {
+            "en": "Local controller (software / hardware)",
+            "de": "Lokaler Controller (Software / Hardware)"
+          },
+          "value": "local"
+        },
+        {
+          "label": {
+            "en": "Cloud-based controller (Open API)",
+            "de": "Cloud-basierter Controller (Open API)"
+          },
+          "value": "cloud"
+        }
+      ],
+      "newLine": true,
+      "sm": 3
+    },
     "ip": {
       "type": "text",
       "label": {
@@ -18,7 +43,8 @@
         "zh-cn": "OmadaIP"
       },
       "newLine": true,
-      "sm": 3
+      "sm": 3,
+      "hidden": "data.connectionType === 'cloud'"
     },
     "port": {
       "type": "text",
@@ -36,7 +62,8 @@
         "zh-cn": "Omada Port(Hadware违约港口=443)"
       },
       "newLine": true,
-      "sm": 3
+      "sm": 3,
+      "hidden": "data.connectionType === 'cloud'"
     },
     "username": {
       "type": "text",
@@ -54,7 +81,8 @@
         "zh-cn": "用户名称"
       },
       "newLine": true,
-      "sm": 3
+      "sm": 3,
+      "hidden": "data.connectionType === 'cloud'"
     },
     "password": {
       "type": "password",
@@ -74,6 +102,58 @@
         "pl": "Password",
         "uk": "Логін",
         "zh-cn": "护照"
+      },
+      "hidden": "data.connectionType === 'cloud'"
+    },
+    "cloudUrl": {
+      "type": "text",
+      "label": {
+        "en": "Open API interface access address (e.g. https://euw1-omada-northbound.tplinkcloud.com)",
+        "de": "Open API Interface-Zugriffsadresse (z.B. https://euw1-omada-northbound.tplinkcloud.com)"
+      },
+      "hidden": "data.connectionType !== 'cloud'",
+      "newLine": true,
+      "sm": 3
+    },
+    "cloudOmadacId": {
+      "type": "text",
+      "label": {
+        "en": "Omada ID",
+        "de": "Omada ID"
+      },
+      "hidden": "data.connectionType !== 'cloud'",
+      "newLine": true,
+      "sm": 3
+    },
+    "clientId": {
+      "type": "text",
+      "label": {
+        "en": "Client ID",
+        "de": "Client ID"
+      },
+      "hidden": "data.connectionType !== 'cloud'",
+      "newLine": true,
+      "sm": 3
+    },
+    "clientSecret": {
+      "type": "password",
+      "label": {
+        "en": "Client Secret",
+        "de": "Client Secret"
+      },
+      "hidden": "data.connectionType !== 'cloud'",
+      "newLine": true,
+      "sm": 3,
+      "repeat": false,
+      "visible": true
+    },
+    "cloudHelp": {
+      "type": "staticText",
+      "hidden": "data.connectionType !== 'cloud'",
+      "newLine": true,
+      "text": {
+        "en": "Create an app under Global View > Settings > Platform Integration > Open API (Client Mode). An admin role is required to enable/disable SSIDs.",
+        "de": "App unter Global View > Einstellungen > Plattform-Integration > Open API anlegen (Client-Modus). Zum Ein-/Ausschalten von SSIDs ist eine Admin-Rolle nötig."
       }
     },
     "interval": {
